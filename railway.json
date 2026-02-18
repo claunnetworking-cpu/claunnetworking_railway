@@ -1,12 +1,30 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "deploy": {
-    "numReplicas": 1,
-    "startCommand": "node dist/index.js",
-    "restartPolicyMaxRetries": 5,
-    "restartPolicyWindowMs": 60000
-  }
+  "name": "claunnetworking-oportunidades",
+  "services": [
+    {
+      "name": "web",
+      "repo": ".",
+      "build": {
+        "metal": true,
+        "buildCommand": "# Adicione seu comando de build personalizado aqui, ex: npm run build"
+      },
+      "variables": {
+        "JWT_SECRET": "sua_chave_secreta_aleatoria_aqui",
+        "VITE_APP_ID": "seu_app_id_manus",
+        "OAUTH_SERVER_URL": "https://api.manus.im",
+        "VITE_OAUTH_PORTAL_URL": "https://portal.manus.im",
+        "OWNER_OPEN_ID": "seu_owner_id",
+        "OWNER_NAME": "seu_nome",
+        "BUILT_IN_FORGE_API_URL": "https://api.manus.im",
+        "BUILT_IN_FORGE_API_KEY": "sua_chave_api_manus",
+        "VITE_FRONTEND_FORGE_API_KEY": "sua_chave_frontend_manus",
+        "VITE_FRONTEND_FORGE_API_URL": "https://api.manus.im",
+        "VITE_ANALYTICS_ENDPOINT": "https://analytics.manus.im",
+        "VITE_ANALYTICS_WEBSITE_ID": "seu_website_id",
+        "VITE_APP_TITLE": "Claunnetworking Oportunidades",
+        "VITE_APP_LOGO": "https://seu-logo-url.png",
+        "NODE_ENV": "production"
+      }
+    }
+  ]
 }
