@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1771409081048,
+      "tag": "0000_previous_solo",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1771409164997,
+      "tag": "0001_awesome_king_cobra",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771411137668,
+      "tag": "0002_curved_proemial_gods",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1771416095590,
+      "tag": "0003_conscious_caretaker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1771435750895,
+      "tag": "0004_aberrant_krista_starr",
+      "breakpoints": true
+    }
+  ]
+}
