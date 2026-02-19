@@ -207,6 +207,9 @@ class SDKServer {
 
     try {
       const secretKey = this.getSessionSecret();
+      if (!ENV.cookieSecret || ENV.cookieSecret === "sua_chave_secreta_aleatoria_aqui") {
+        console.error("[Auth] JWT_SECRET is not configured or using default value!");
+      }
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
@@ -260,9 +263,15 @@ class SDKServer {
     // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
+    
+    if (!sessionCookie) {
+      console.warn("[Auth] No session cookie found in request headers");
+    }
+
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {
+      console.warn("[Auth] Session verification failed, throwing ForbiddenError");
       throw ForbiddenError("Invalid session cookie");
     }
 

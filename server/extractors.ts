@@ -87,22 +87,26 @@ async function extractFromGupy(url: string): Promise<ExtractedJob> {
       });
 
       const content = response.choices[0]?.message?.content || '';
-      const contentStr = typeof content === 'string' ? content : '';
+      const contentStr = typeof content === 'string' ? content : JSON.stringify(content);
       const jsonMatch = contentStr.match(/\{[\s\S]*\}/);
       
       if (jsonMatch) {
-        const extracted = JSON.parse(jsonMatch[0]);
-        return {
-          title: extracted.title || 'Vaga sem título',
-          company: extracted.company || 'Empresa não identificada',
-          description: extracted.description || '',
-          link: url,
-          city: extracted.city || '',
-          state: extracted.state || '',
-          modality: extracted.modality || 'Presencial',
-          isPCD: extracted.isPCD || false,
-          category: extracted.category || 'operacional',
-        };
+        try {
+          const extracted = JSON.parse(jsonMatch[0]);
+          return {
+            title: extracted.title || 'Vaga sem título',
+            company: extracted.company || 'Empresa não identificada',
+            description: extracted.description || '',
+            link: url,
+            city: extracted.city || '',
+            state: extracted.state || '',
+            modality: extracted.modality || 'Presencial',
+            isPCD: !!extracted.isPCD,
+            category: extracted.category || 'operacional',
+          };
+        } catch (parseError) {
+          console.warn('Failed to parse LLM JSON response:', parseError);
+        }
       }
     } catch (llmError) {
       console.warn('LLM extraction failed, falling back to regex:', llmError);
