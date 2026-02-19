@@ -29,9 +29,9 @@ export function BulkImportDialog({ open, onOpenChange, type, onSuccess }: BulkIm
     const reader = new FileReader();
     reader.onload = (e) => {
       const content = e.target?.result as string;
-      // Parse URLs from file (one URL per line)
+      // Parse URLs from file (one URL per line, supports \r\n and \n)
       const parsedUrls = content
-        .split('\n')
+        .split(/\r?\n/)
         .map(line => line.trim())
         .filter(line => line && (line.startsWith('http://') || line.startsWith('https://')));
       
@@ -101,7 +101,7 @@ export function BulkImportDialog({ open, onOpenChange, type, onSuccess }: BulkIm
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.txt"
+                accept=".csv,text/csv,.txt,text/plain"
                 onChange={handleFileUpload}
                 className="hidden"
               />
