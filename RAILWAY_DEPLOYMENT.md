@@ -1,273 +1,303 @@
-# 🚀 Guia de Deployment - Claunnetworking Oportunidades no Railway
+# Guia de Deploy no Railway
 
-## Pré-requisitos
+Instruções passo a passo para fazer deploy do projeto ClaunNetworking no Railway.
+
+## 📋 Pré-requisitos
 
 - Conta no [Railway.app](https://railway.app)
-- Git instalado localmente
-- Node.js 18+ instalado localmente (opcional, para testes)
+- Repositório GitHub com o código
+- Conta no GitHub
 
----
+## 🚀 Passo 1: Preparar o Repositório
 
-## 1️⃣ Preparar o Repositório GitHub
-
-### 1.1 Criar Repositório no GitHub
+### 1.1 Estrutura do Git
 
 ```bash
-# Clone o projeto localmente (se ainda não tiver)
-git clone https://github.com/SEU_USUARIO/claunnetworking-oportunidades.git
-cd claunnetworking-oportunidades
-
-# Inicializar Git (se necessário)
+# Inicializar git (se ainda não estiver)
 git init
+
+# Adicionar todos os arquivos
 git add .
-git commit -m "Initial commit: Claunnetworking Oportunidades"
-git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/claunnetworking-oportunidades.git
-git push -u origin main
-```
 
----
+# Commit inicial
+git commit -m "Initial commit: ClaunNetworking standalone project"
 
-## 2️⃣ Configurar Railway
-
-### 2.1 Login no Railway
-
-1. Acesse [railway.app](https://railway.app)
-2. Clique em "Start a New Project"
-3. Selecione "Deploy from GitHub"
-4. Autorize o Railway a acessar seus repositórios GitHub
-5. Selecione o repositório `claunnetworking-oportunidades`
-
-### 2.2 Configurar Variáveis de Ambiente
-
-No painel do Railway, vá para **Variables** e adicione:
-
-```
-# Banco de Dados (Railway fornecerá automaticamente)
-DATABASE_URL=mysql://user:password@host:port/dbname
-
-# Autenticação
-JWT_SECRET=sua_chave_secreta_aleatoria_aqui
-VITE_APP_ID=seu_app_id_manus
-OAUTH_SERVER_URL=https://api.manus.im
-
-# OAuth
-VITE_OAUTH_PORTAL_URL=https://portal.manus.im
-OWNER_OPEN_ID=seu_owner_id
-OWNER_NAME=seu_nome
-
-# APIs Manus
-BUILT_IN_FORGE_API_URL=https://api.manus.im
-BUILT_IN_FORGE_API_KEY=sua_chave_api_manus
-VITE_FRONTEND_FORGE_API_KEY=sua_chave_frontend_manus
-VITE_FRONTEND_FORGE_API_URL=https://api.manus.im
-
-# Analytics
-VITE_ANALYTICS_ENDPOINT=https://analytics.manus.im
-VITE_ANALYTICS_WEBSITE_ID=seu_website_id
-
-# App Config
-VITE_APP_TITLE=Claunnetworking Oportunidades
-VITE_APP_LOGO=https://seu-logo-url.png
-
-# Node Environment
-NODE_ENV=production
-```
-
-### 2.3 Adicionar Banco de Dados MySQL
-
-1. No painel do Railway, clique em **+ Add Service**
-2. Selecione **MySQL**
-3. Railway criará automaticamente um banco de dados
-4. A variável `DATABASE_URL` será preenchida automaticamente
-
----
-
-## 3️⃣ Configurar Build e Deploy
-
-### 3.1 Verificar Procfile (já incluído no projeto)
-
-O arquivo `Procfile` já está configurado:
-
-```
-web: node dist/index.js
-```
-
-### 3.2 Verificar package.json
-
-Certifique-se de que o `package.json` possui:
-
-```json
-{
-  "scripts": {
-    "build": "vite build && esbuild server/_core/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
-    "start": "node dist/index.js"
-  }
-}
-```
-
-### 3.3 Deploy Automático
-
-Railway fará deploy automaticamente quando você fazer push para a branch `main`:
-
-```bash
-git add .
-git commit -m "Update: feature xyz"
+# Fazer push para GitHub
 git push origin main
 ```
 
----
+### 1.2 Estrutura Esperada no GitHub
 
-## 4️⃣ Verificar Deploy
-
-### 4.1 Acompanhar Build
-
-1. No painel do Railway, vá para **Deployments**
-2. Clique no deploy mais recente
-3. Veja os logs em tempo real
-
-### 4.2 Acessar Aplicação
-
-Após o build completar:
-
-1. Vá para **Settings** → **Domains**
-2. Copie o domínio gerado (ex: `claunnetworking-oportunidades.up.railway.app`)
-3. Acesse em seu navegador
-
-### 4.3 Verificar Saúde da Aplicação
-
-```bash
-# Testar endpoint de health check
-curl https://seu-dominio.up.railway.app/api/health
-
-# Testar autenticação
-curl https://seu-dominio.up.railway.app/api/oauth/callback
+```
+seu-repo/
+├── backend/          # Código do backend
+├── frontend/         # Código do frontend
+├── data/            # Dados de exemplo
+└── README.md
 ```
 
----
+## 🗄️ Passo 2: Criar Banco de Dados
 
-## 5️⃣ Configurar Domínio Customizado (Opcional)
+### 2.1 No Railway Dashboard
 
-### 5.1 Adicionar Domínio Customizado
+1. Ir para [railway.app](https://railway.app)
+2. Criar novo projeto
+3. Selecionar "MySQL" ou "TiDB"
+4. Configurar:
+   - Nome: `claunnetworking-db`
+   - Região: Escolher a mais próxima
+5. Copiar connection string
 
-1. No Railway, vá para **Settings** → **Domains**
-2. Clique em **+ Add Domain**
-3. Digite seu domínio customizado (ex: `oportunidades.claunnetworking.com`)
-4. Railway fornecerá um CNAME para configurar no seu registrador de domínio
+### 2.2 Formato da Connection String
 
-### 5.2 Configurar DNS
+```
+mysql://user:password@host:port/database
+```
 
-1. Acesse seu registrador de domínio (GoDaddy, Namecheap, etc.)
-2. Adicione um registro CNAME apontando para o CNAME fornecido pelo Railway
-3. Aguarde propagação DNS (até 24 horas)
+Exemplo:
+```
+mysql://root:password123@gateway04.us-east-1.prod.aws.tidbcloud.com:4000/claunnetworking
+```
 
----
+## 🔧 Passo 3: Deploy do Backend
 
-## 6️⃣ Monitoramento e Logs
+### 3.1 Criar Novo Serviço
 
-### 6.1 Acessar Logs
+1. No Railway Dashboard, clicar "New Service"
+2. Selecionar "GitHub Repo"
+3. Conectar seu repositório
+4. Selecionar branch `main`
 
-1. No painel do Railway, vá para **Logs**
-2. Veja logs em tempo real da aplicação
-3. Procure por erros ou warnings
+### 3.2 Configurar Serviço
 
-### 6.2 Métricas
+1. **Configurações Básicas**
+   - Nome: `claunnetworking-backend`
+   - Root Directory: `backend/`
 
-1. Vá para **Metrics**
-2. Monitore CPU, memória e requisições
-3. Configure alertas se necessário
+2. **Variáveis de Ambiente**
+   
+   Clicar em "Variables" e adicionar:
 
----
+   ```
+   DATABASE_URL=mysql://user:password@host:port/database
+   JWT_SECRET=sua-chave-secreta-super-segura-aqui
+   FRONTEND_URL=https://seu-frontend.railway.app
+   NODE_ENV=production
+   PORT=3000
+   RATE_LIMIT_WINDOW_MS=900000
+   RATE_LIMIT_MAX_REQUESTS=100
+   ```
 
-## 7️⃣ Troubleshooting
+3. **Build & Deploy**
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npm start`
+   - Node Version: `18` ou superior
 
-### Erro: "Build failed"
+### 3.3 Gerar JWT_SECRET Seguro
 
-**Solução:**
-- Verifique se todas as dependências estão no `package.json`
-- Confirme que `npm install` funciona localmente
-- Verifique logs do build no Railway
+Use um destes comandos:
+
+```bash
+# OpenSSL (Linux/Mac)
+openssl rand -base64 32
+
+# Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+# Python
+python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+### 3.4 Inicializar Banco de Dados
+
+Após o deploy, executar migrations:
+
+```bash
+# No Railway Shell ou localmente
+npm run db:push
+npm run db:seed
+```
+
+## 🎨 Passo 4: Deploy do Frontend
+
+### 4.1 Criar Novo Serviço
+
+1. No Railway Dashboard, clicar "New Service"
+2. Selecionar "GitHub Repo"
+3. Conectar seu repositório
+4. Selecionar branch `main`
+
+### 4.2 Configurar Serviço
+
+1. **Configurações Básicas**
+   - Nome: `claunnetworking-frontend`
+   - Root Directory: `frontend/`
+
+2. **Variáveis de Ambiente**
+   
+   Clicar em "Variables" e adicionar:
+
+   ```
+   VITE_API_URL=https://seu-backend.railway.app
+   VITE_APP_NAME=ClaunNetworking Oportunidades
+   VITE_APP_TITLE=Sua rede de oportunidades
+   VITE_ENV=production
+   ```
+
+3. **Build & Deploy**
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npm run preview`
+   - Node Version: `18` ou superior
+
+### 4.3 Configurar Domínio Customizado (Opcional)
+
+1. No Railway, ir para "Settings"
+2. Clicar em "Domain"
+3. Adicionar domínio customizado
+4. Configurar DNS no seu registrador
+
+## ✅ Passo 5: Verificar Deploy
+
+### 5.1 Testar Backend
+
+```bash
+# Health check
+curl https://seu-backend.railway.app/api/health
+
+# Resposta esperada:
+# {"status":"ok","timestamp":"2026-02-20T..."}
+```
+
+### 5.2 Testar Frontend
+
+Abrir em um navegador:
+```
+https://seu-frontend.railway.app
+```
+
+### 5.3 Testar Autenticação
+
+```bash
+# Registrar
+curl -X POST https://seu-backend.railway.app/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123",
+    "name": "Test User"
+  }'
+
+# Login
+curl -X POST https://seu-backend.railway.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@example.com",
+    "password": "password123"
+  }'
+```
+
+## 🔐 Passo 6: Configurar CORS
+
+### 6.1 Backend (.env)
+
+Certifique-se de que `FRONTEND_URL` está correto:
+
+```env
+FRONTEND_URL=https://seu-frontend.railway.app
+```
+
+### 6.2 Verificar Requisições
+
+No navegador (DevTools), verificar se as requisições para `/api/*` estão funcionando.
+
+## 📊 Passo 7: Monitoramento
+
+### 7.1 Logs
+
+No Railway Dashboard:
+1. Selecionar serviço
+2. Clicar em "Logs"
+3. Monitorar erros e avisos
+
+### 7.2 Métricas
+
+1. Selecionar serviço
+2. Clicar em "Metrics"
+3. Visualizar:
+   - CPU Usage
+   - Memory Usage
+   - Network I/O
+
+## 🔄 Passo 8: CI/CD Automático
+
+Railway faz deploy automático a cada push para `main`:
+
+```bash
+# Fazer mudanças
+git add .
+git commit -m "Update feature"
+
+# Push para GitHub
+git push origin main
+
+# Railway fará deploy automaticamente
+```
+
+## 🆘 Troubleshooting
 
 ### Erro: "Database connection failed"
 
-**Solução:**
-- Confirme que `DATABASE_URL` está configurada
-- Verifique se MySQL está rodando no Railway
-- Teste a conexão localmente com a mesma URL
+1. Verificar `DATABASE_URL`
+2. Verificar se o banco está rodando
+3. Verificar firewall/security groups
+4. Testar conexão localmente
 
-### Erro: "OAuth callback failed"
+### Erro: "CORS error"
 
-**Solução:**
-- Confirme que `VITE_OAUTH_PORTAL_URL` está correto
-- Verifique se `VITE_APP_ID` é válido
-- Adicione seu domínio Railway à lista de redirect URIs no Manus
+1. Verificar `FRONTEND_URL` no backend
+2. Verificar `VITE_API_URL` no frontend
+3. Certifique-se de que ambas as URLs estão corretas
 
-### Erro: "Cannot find module"
+### Erro: "Token invalid"
 
-**Solução:**
-- Verifique se todos os imports estão corretos
-- Confirme que `esbuild` está bundlando corretamente
-- Limpe `node_modules` e reinstale: `npm ci`
+1. Regenerar `JWT_SECRET`
+2. Fazer logout e login novamente
+3. Limpar localStorage do navegador
 
----
+### Frontend mostra página em branco
 
-## 8️⃣ Backup e Recuperação
+1. Abrir DevTools (F12)
+2. Verificar console para erros
+3. Verificar se `VITE_API_URL` está correto
+4. Verificar se o backend está acessível
 
-### 8.1 Backup do Banco de Dados
+## 📈 Próximos Passos
 
-```bash
-# Exportar dados MySQL
-mysqldump -h host -u user -p database > backup.sql
+1. **Configurar domínio customizado**
+   - Comprar domínio
+   - Configurar DNS
+   - Apontar para Railway
 
-# Importar dados
-mysql -h host -u user -p database < backup.sql
-```
+2. **Implementar CI/CD avançado**
+   - Testes automáticos
+   - Linting
+   - Build checks
 
-### 8.2 Rollback de Deploy
+3. **Configurar backups**
+   - Backup automático do banco
+   - Plano de recuperação
 
-1. No Railway, vá para **Deployments**
-2. Selecione um deploy anterior
-3. Clique em **Rollback**
-
----
-
-## 9️⃣ Variáveis de Ambiente Seguras
-
-### 9.1 Nunca commitar secrets
-
-Adicione ao `.gitignore`:
-
-```
-.env
-.env.local
-.env.production.local
-```
-
-### 9.2 Usar Railway Secrets
-
-1. No Railway, vá para **Variables**
-2. Marque valores sensíveis como **Secret**
-3. Railway não exibirá o valor em logs
-
----
-
-## 🔟 Próximos Passos
-
-- [ ] Configurar CI/CD com GitHub Actions
-- [ ] Adicionar testes automatizados
-- [ ] Configurar alertas de erro
-- [ ] Implementar rate limiting
-- [ ] Adicionar HTTPS automático (Railway faz isso)
-- [ ] Configurar CDN para assets estáticos
-
----
+4. **Monitoramento e alertas**
+   - Configurar alertas de erro
+   - Monitorar performance
+   - Logs centralizados
 
 ## 📞 Suporte
 
-- **Railway Docs:** https://docs.railway.app
-- **Manus Docs:** https://docs.manus.im
-- **GitHub Issues:** Abra uma issue no repositório
+- [Railway Docs](https://docs.railway.app)
+- [Railway Community](https://railway.app/community)
+- [GitHub Issues](https://github.com/seu-repo/issues)
 
 ---
 
-**Última atualização:** Fevereiro 2026
+**Parabéns! Seu projeto está no ar! 🎉**
