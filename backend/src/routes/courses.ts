@@ -26,23 +26,25 @@ export default function coursesRoutes(db: any) {
 
       // Filtro de status (padrão: ativo)
       if (status) {
-        // Garante que o valor é um dos permitidos (opcional, mas boa prática)
-        const validStatus = status === 'ativo' || status === 'inativo' ? status : 'ativo';
-        conditions.push(eq(schema.courses.status, validStatus));
+        const statusStr = String(status); // garante que é string
+        const validStatus = statusStr === 'ativo' || statusStr === 'inativo' ? statusStr : null;
+        if (validStatus) {
+          conditions.push(eq(schema.courses.status, validStatus));
+        }
       } else {
         conditions.push(eq(schema.courses.status, 'ativo'));
       }
 
       // Filtro por categoria
       if (category) {
-        conditions.push(eq(schema.courses.category, category as string));
+        conditions.push(eq(schema.courses.category, String(category)));
       }
 
       // Filtro por modalidade
       if (modality) {
-        // Validação simples (pode ser expandida conforme necessidade)
-        const validModality = ['Presencial', 'Híbrido', 'Online'].includes(modality as string)
-          ? modality
+        const modalityStr = String(modality);
+        const validModality = ['Presencial', 'Híbrido', 'Online'].includes(modalityStr)
+          ? modalityStr
           : null;
         if (validModality) {
           conditions.push(eq(schema.courses.modality, validModality));
@@ -56,7 +58,7 @@ export default function coursesRoutes(db: any) {
 
       // Filtro por busca textual no título
       if (search) {
-        conditions.push(like(schema.courses.title, `%${search}%`));
+        conditions.push(like(schema.courses.title, `%${String(search)}%`));
       }
 
       // Aplica todas as condições com AND
@@ -109,12 +111,10 @@ export default function coursesRoutes(db: any) {
     try {
       const { title, institution, description, link, duration, modality, isFree, category } = req.body;
 
-      // Validação de campos obrigatórios
       if (!title || !institution || !link || !modality) {
         return res.status(400).json({ error: 'Campos obrigatórios faltando' });
       }
 
-      // Validação de modalidade (opcional)
       const validModalities = ['Presencial', 'Híbrido', 'Online'];
       if (!validModalities.includes(modality)) {
         return res.status(400).json({ error: 'Modalidade inválida' });
@@ -132,8 +132,8 @@ export default function coursesRoutes(db: any) {
         modality,
         isFree: isFree || false,
         category,
-        status: 'ativo', // padrão ativo
-        clicks: 0,        // inicializa contador
+        status: 'ativo',
+        clicks: 0,
       });
 
       res.status(201).json({
@@ -155,12 +155,10 @@ export default function coursesRoutes(db: any) {
       const { id } = req.params;
       const { title, institution, description, link, duration, modality, isFree, category, status } = req.body;
 
-      // Validação de status se fornecido
       if (status && !['ativo', 'inativo'].includes(status)) {
         return res.status(400).json({ error: 'Status inválido' });
       }
 
-      // Validação de modalidade se fornecida
       if (modality && !['Presencial', 'Híbrido', 'Online'].includes(modality)) {
         return res.status(400).json({ error: 'Modalidade inválida' });
       }
@@ -177,7 +175,7 @@ export default function coursesRoutes(db: any) {
           isFree,
           category,
           status,
-          updatedAt: new Date(), // campo opcional, mas presente no schema
+          updatedAt: new Date(),
         })
         .where(eq(schema.courses.id, id));
 
@@ -213,7 +211,6 @@ export default function coursesRoutes(db: any) {
     try {
       const { id } = req.params;
 
-      // Busca o curso para garantir que existe
       const courses = await db
         .select()
         .from(schema.courses)
@@ -223,13 +220,11 @@ export default function coursesRoutes(db: any) {
         return res.status(404).json({ error: 'Curso não encontrado' });
       }
 
-      // Incrementa o contador de cliques
       await db
         .update(schema.courses)
         .set({ clicks: (courses[0].clicks || 0) + 1 })
         .where(eq(schema.courses.id, id));
 
-      // Registra a métrica (assumindo que a tabela clickMetrics existe)
       await db.insert(schema.clickMetrics).values({
         id: uuidv4(),
         resourceType: 'course',
