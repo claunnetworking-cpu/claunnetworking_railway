@@ -20,7 +20,7 @@
     "react-hook-form": "^7.64.0",
     "@hookform/resolvers": "^5.2.2",
     "recharts": "^2.15.4",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
     "terser": "^5.39.0"
   },
   "devDependencies": {
