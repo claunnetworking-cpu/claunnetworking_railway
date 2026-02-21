@@ -1,5 +1,5 @@
 import express, { Express, Request, Response } from 'express';
-import cors from 'express-cors';
+import cors from 'cors'; // ✅ importação corrigida
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createConnection } from 'mysql2/promise';
@@ -45,7 +45,7 @@ app.use('/api/', limiter);
 // DATABASE CONNECTION
 // ============================================
 
-let db: any;
+let db: ReturnType<typeof drizzle>; // tipagem mais precisa (opcional)
 
 async function initializeDatabase() {
   try {
@@ -54,7 +54,7 @@ async function initializeDatabase() {
       multipleStatements: true,
     });
     
-    db = drizzle(connection, { schema });
+    db = drizzle(connection, { schema, mode: 'default' }); // ✅ modo explícito
     console.log('✅ Database connected successfully');
   } catch (error) {
     console.error('❌ Database connection failed:', error);
@@ -92,17 +92,18 @@ app.get('/api/admin/stats', verifyToken, async (req: Request, res: Response) => 
       return res.status(403).json({ error: 'Acesso negado' });
     }
 
-    // Fetch statistics
-    const [jobsCount] = await db.select().from(schema.jobs);
-    const [coursesCount] = await db.select().from(schema.courses);
+    // ✅ Correção: obtém os arrays completos e conta os elementos
+    const jobs = await db.select().from(schema.jobs);
+    const courses = await db.select().from(schema.courses);
     
     res.json({
-      jobs: jobsCount?.length || 0,
-      courses: coursesCount?.length || 0,
-      totalClicks: 0,
+      jobs: jobs.length,
+      courses: courses.length,
+      totalClicks: 0, // placeholders, ajuste conforme sua lógica
       totalVisits: 0,
     });
   } catch (error) {
+    console.error('Erro ao buscar estatísticas:', error);
     res.status(500).json({ error: 'Erro ao buscar estatísticas' });
   }
 });
