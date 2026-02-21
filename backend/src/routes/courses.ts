@@ -4,47 +4,67 @@ import { v4 as uuidv4 } from 'uuid';
 import * as schema from '../db/schema.js';
 import { verifyToken, requireAdmin, AuthRequest } from '../middleware/auth.js';
 
+/**
+ * Rotas para gerenciamento de cursos
+ * @param db Instância do drizzle-orm
+ */
 export default function coursesRoutes(db: any) {
   const router = Router();
 
-  // Get all courses with filters
+  // ============================================
+  // GET /api/courses
+  // Lista todos os cursos com filtros opcionais
+  // ============================================
   router.get('/', async (req: Request, res: Response) => {
     try {
       const { category, modality, isFree, status, search } = req.query;
 
       let query = db.select().from(schema.courses);
 
-      // Apply filters
+      // Constrói array de condições
       const conditions = [];
-      
+
+      // Filtro de status (padrão: ativo)
       if (status) {
-        conditions.push(eq(schema.courses.status, status as string));
+        // Garante que o valor é um dos permitidos (opcional, mas boa prática)
+        const validStatus = status === 'ativo' || status === 'inativo' ? status : 'ativo';
+        conditions.push(eq(schema.courses.status, validStatus));
       } else {
         conditions.push(eq(schema.courses.status, 'ativo'));
       }
 
+      // Filtro por categoria
       if (category) {
         conditions.push(eq(schema.courses.category, category as string));
       }
 
+      // Filtro por modalidade
       if (modality) {
-        conditions.push(eq(schema.courses.modality, modality as string));
+        // Validação simples (pode ser expandida conforme necessidade)
+        const validModality = ['Presencial', 'Híbrido', 'Online'].includes(modality as string)
+          ? modality
+          : null;
+        if (validModality) {
+          conditions.push(eq(schema.courses.modality, validModality));
+        }
       }
 
+      // Filtro por gratuito
       if (isFree === 'true') {
         conditions.push(eq(schema.courses.isFree, true));
       }
 
+      // Filtro por busca textual no título
       if (search) {
-        conditions.push(
-          like(schema.courses.title, `%${search}%`)
-        );
+        conditions.push(like(schema.courses.title, `%${search}%`));
       }
 
+      // Aplica todas as condições com AND
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
       }
 
+      // Executa a consulta ordenada por data de criação (mais recentes primeiro)
       const courses = await query.orderBy(desc(schema.courses.createdAt));
 
       res.json({
@@ -52,12 +72,15 @@ export default function coursesRoutes(db: any) {
         courses,
       });
     } catch (error) {
-      console.error('Get courses error:', error);
+      console.error('Erro ao buscar cursos:', error);
       res.status(500).json({ error: 'Erro ao buscar cursos' });
     }
   });
 
-  // Get single course
+  // ============================================
+  // GET /api/courses/:id
+  // Retorna um curso específico
+  // ============================================
   router.get('/:id', async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
@@ -73,17 +96,28 @@ export default function coursesRoutes(db: any) {
 
       res.json(courses[0]);
     } catch (error) {
+      console.error('Erro ao buscar curso:', error);
       res.status(500).json({ error: 'Erro ao buscar curso' });
     }
   });
 
-  // Create course (admin only)
+  // ============================================
+  // POST /api/courses
+  // Cria um novo curso (apenas admin)
+  // ============================================
   router.post('/', verifyToken, requireAdmin, async (req: AuthRequest, res: Response) => {
     try {
       const { title, institution, description, link, duration, modality, isFree, category } = req.body;
 
+      // Validação de campos obrigatórios
       if (!title || !institution || !link || !modality) {
         return res.status(400).json({ error: 'Campos obrigatórios faltando' });
+      }
+
+      // Validação de modalidade (opcional)
+      const validModalities = ['Presencial', 'Híbrido', 'Online'];
+      if (!validModalities.includes(modality)) {
+        return res.status(400).json({ error: 'Modalidade inválida' });
       }
 
       const courseId = uuidv4();
@@ -98,7 +132,8 @@ export default function coursesRoutes(db: any) {
         modality,
         isFree: isFree || false,
         category,
-        status: 'ativo',
+        status: 'ativo', // padrão ativo
+        clicks: 0,        // inicializa contador
       });
 
       res.status(201).json({
@@ -106,16 +141,29 @@ export default function coursesRoutes(db: any) {
         id: courseId,
       });
     } catch (error) {
-      console.error('Create course error:', error);
+      console.error('Erro ao criar curso:', error);
       res.status(500).json({ error: 'Erro ao criar curso' });
     }
   });
 
-  // Update course (admin only)
+  // ============================================
+  // PUT /api/courses/:id
+  // Atualiza um curso existente (apenas admin)
+  // ============================================
   router.put('/:id', verifyToken, requireAdmin, async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
       const { title, institution, description, link, duration, modality, isFree, category, status } = req.body;
+
+      // Validação de status se fornecido
+      if (status && !['ativo', 'inativo'].includes(status)) {
+        return res.status(400).json({ error: 'Status inválido' });
+      }
+
+      // Validação de modalidade se fornecida
+      if (modality && !['Presencial', 'Híbrido', 'Online'].includes(modality)) {
+        return res.status(400).json({ error: 'Modalidade inválida' });
+      }
 
       await db
         .update(schema.courses)
@@ -129,17 +177,21 @@ export default function coursesRoutes(db: any) {
           isFree,
           category,
           status,
-          updatedAt: new Date(),
+          updatedAt: new Date(), // campo opcional, mas presente no schema
         })
         .where(eq(schema.courses.id, id));
 
       res.json({ message: 'Curso atualizado com sucesso' });
     } catch (error) {
+      console.error('Erro ao atualizar curso:', error);
       res.status(500).json({ error: 'Erro ao atualizar curso' });
     }
   });
 
-  // Delete course (admin only)
+  // ============================================
+  // DELETE /api/courses/:id
+  // Remove um curso (apenas admin)
+  // ============================================
   router.delete('/:id', verifyToken, requireAdmin, async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
@@ -148,16 +200,20 @@ export default function coursesRoutes(db: any) {
 
       res.json({ message: 'Curso deletado com sucesso' });
     } catch (error) {
+      console.error('Erro ao deletar curso:', error);
       res.status(500).json({ error: 'Erro ao deletar curso' });
     }
   });
 
-  // Track click
+  // ============================================
+  // POST /api/courses/:id/click
+  // Registra um clique no curso (para métricas)
+  // ============================================
   router.post('/:id/click', async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
 
-      // Increment click count
+      // Busca o curso para garantir que existe
       const courses = await db
         .select()
         .from(schema.courses)
@@ -167,21 +223,24 @@ export default function coursesRoutes(db: any) {
         return res.status(404).json({ error: 'Curso não encontrado' });
       }
 
+      // Incrementa o contador de cliques
       await db
         .update(schema.courses)
         .set({ clicks: (courses[0].clicks || 0) + 1 })
         .where(eq(schema.courses.id, id));
 
-      // Record metric
+      // Registra a métrica (assumindo que a tabela clickMetrics existe)
       await db.insert(schema.clickMetrics).values({
         id: uuidv4(),
         resourceType: 'course',
         resourceId: id,
         clickType: 'redirect',
+        createdAt: new Date(),
       });
 
       res.json({ message: 'Clique registrado' });
     } catch (error) {
+      console.error('Erro ao registrar clique:', error);
       res.status(500).json({ error: 'Erro ao registrar clique' });
     }
   });
