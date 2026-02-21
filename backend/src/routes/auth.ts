@@ -4,19 +4,27 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../db/schema.js';
 import { generateToken, verifyToken, AuthRequest } from '../middleware/auth.js';
 
+/**
+ * Rotas de autenticação
+ * @param db Instância do drizzle-orm
+ */
 export default function authRoutes(db: any) {
   const router = Router();
 
-  // Register
+  /**
+   * POST /api/auth/register
+   * Registra um novo usuário
+   */
   router.post('/register', async (req: Request, res: Response) => {
     try {
       const { email, password, name } = req.body;
 
+      // Validação básica
       if (!email || !password) {
         return res.status(400).json({ error: 'Email e senha são obrigatórios' });
       }
 
-      // Check if user exists
+      // Verifica se usuário já existe
       const existingUser = await db
         .select()
         .from(schema.users)
@@ -26,31 +34,42 @@ export default function authRoutes(db: any) {
         return res.status(400).json({ error: 'Usuário já existe' });
       }
 
-      // Hash password
+      // Hash da senha
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Create user
+      // Insere novo usuário
+      // Nota: em MySQL, o drizzle retorna um objeto com insertId (auto-increment)
       const result = await db.insert(schema.users).values({
         email,
         password: hashedPassword,
-        name: name || email,
+        name: name || email.split('@')[0] || 'Usuário',
         role: 'user',
       });
 
+      // Gera token JWT
       const token = generateToken(result.insertId, email, 'user');
 
+      // Retorna sucesso
       res.status(201).json({
         message: 'Usuário criado com sucesso',
         token,
-        user: { id: result.insertId, email, name, role: 'user' },
+        user: {
+          id: result.insertId,
+          email,
+          name: name || email.split('@')[0],
+          role: 'user',
+        },
       });
     } catch (error) {
-      console.error('Register error:', error);
+      console.error('Erro no registro:', error);
       res.status(500).json({ error: 'Erro ao registrar usuário' });
     }
   });
 
-  // Login
+  /**
+   * POST /api/auth/login
+   * Autentica um usuário existente
+   */
   router.post('/login', async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
@@ -59,7 +78,7 @@ export default function authRoutes(db: any) {
         return res.status(400).json({ error: 'Email e senha são obrigatórios' });
       }
 
-      // Find user
+      // Busca usuário pelo email
       const users = await db
         .select()
         .from(schema.users)
@@ -71,34 +90,46 @@ export default function authRoutes(db: any) {
 
       const user = users[0];
 
-      // Verify password
+      // Verifica senha
       const passwordMatch = await bcrypt.compare(password, user.password);
-
       if (!passwordMatch) {
         return res.status(401).json({ error: 'Credenciais inválidas' });
       }
 
-      // Generate token
+      // Gera token
       const token = generateToken(user.id, user.email, user.role);
 
       res.json({
         message: 'Login realizado com sucesso',
         token,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role },
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        },
       });
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('Erro no login:', error);
       res.status(500).json({ error: 'Erro ao fazer login' });
     }
   });
 
-  // Get Current User
+  /**
+   * GET /api/auth/me
+   * Retorna os dados do usuário autenticado
+   */
   router.get('/me', verifyToken, async (req: AuthRequest, res: Response) => {
     try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: 'Usuário não autenticado' });
+      }
+
       const users = await db
         .select()
         .from(schema.users)
-        .where(eq(schema.users.id, req.user!.id));
+        .where(eq(schema.users.id, userId));
 
       if (users.length === 0) {
         return res.status(404).json({ error: 'Usuário não encontrado' });
@@ -112,6 +143,7 @@ export default function authRoutes(db: any) {
         role: user.role,
       });
     } catch (error) {
+      console.error('Erro ao buscar usuário:', error);
       res.status(500).json({ error: 'Erro ao buscar usuário' });
     }
   });
