@@ -10,7 +10,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8080,
+    port: 5173,
     strictPort: false,
     proxy: {
       '/api': {
@@ -19,6 +19,9 @@ export default defineConfig({
         rewrite: (path) => path,
       },
     },
+  },
+  preview: {
+    allowedHosts: ['www.claunnetworking.com.br'], // Adicione seu domínio aqui
   },
   build: {
     outDir: 'dist',
