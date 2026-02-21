@@ -21,28 +21,29 @@ export default function jobsRoutes(db: any) {
 
       let query = db.select().from(schema.jobs);
 
-      // Constrói array de condições
       const conditions = [];
 
       // Filtro de status (padrão: ativa)
       if (status) {
-        const validStatus = status === 'ativa' || status === 'inativa' ? status : null;
+        const statusStr = String(status);
+        const validStatus = statusStr === 'ativa' || statusStr === 'inativa' ? statusStr : null;
         if (validStatus) {
           conditions.push(eq(schema.jobs.status, validStatus));
-        } // se inválido, ignora o filtro (ou pode retornar erro)
+        }
       } else {
         conditions.push(eq(schema.jobs.status, 'ativa'));
       }
 
       // Filtro por categoria
       if (category) {
-        conditions.push(eq(schema.jobs.category, category as string));
+        conditions.push(eq(schema.jobs.category, String(category)));
       }
 
       // Filtro por modalidade
       if (modality) {
-        const validModality = ['Presencial', 'Remoto', 'Híbrido'].includes(modality as string)
-          ? modality
+        const modalityStr = String(modality);
+        const validModality = ['Presencial', 'Remoto', 'Híbrido'].includes(modalityStr)
+          ? modalityStr
           : null;
         if (validModality) {
           conditions.push(eq(schema.jobs.modality, validModality));
@@ -56,15 +57,13 @@ export default function jobsRoutes(db: any) {
 
       // Filtro por busca textual no título
       if (search) {
-        conditions.push(like(schema.jobs.title, `%${search}%`));
+        conditions.push(like(schema.jobs.title, `%${String(search)}%`));
       }
 
-      // Aplica todas as condições com AND
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
       }
 
-      // Executa a consulta ordenada por data de criação (mais recentes primeiro)
       const jobs = await query.orderBy(desc(schema.jobs.createdAt));
 
       res.json({
@@ -109,12 +108,10 @@ export default function jobsRoutes(db: any) {
     try {
       const { title, company, description, link, city, state, modality, isPCD, category } = req.body;
 
-      // Validação de campos obrigatórios
       if (!title || !company || !link || !modality) {
         return res.status(400).json({ error: 'Campos obrigatórios faltando' });
       }
 
-      // Validação de modalidade
       const validModalities = ['Presencial', 'Remoto', 'Híbrido'];
       if (!validModalities.includes(modality)) {
         return res.status(400).json({ error: 'Modalidade inválida' });
@@ -122,7 +119,7 @@ export default function jobsRoutes(db: any) {
 
       const jobId = uuidv4();
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 30); // expira em 30 dias
+      expiresAt.setDate(expiresAt.getDate() + 30);
 
       await db.insert(schema.jobs).values({
         id: jobId,
@@ -136,7 +133,7 @@ export default function jobsRoutes(db: any) {
         isPCD: isPCD || false,
         category,
         status: 'ativa',
-        clicks: 0, // inicializa contador
+        clicks: 0,
         expiresAt,
       });
 
@@ -159,18 +156,15 @@ export default function jobsRoutes(db: any) {
       const { id } = req.params;
       const { title, company, description, link, city, state, modality, isPCD, category, status } = req.body;
 
-      // Verifica se a vaga existe
       const existing = await db.select().from(schema.jobs).where(eq(schema.jobs.id, id));
       if (existing.length === 0) {
         return res.status(404).json({ error: 'Vaga não encontrada' });
       }
 
-      // Validação de status se fornecido
       if (status && !['ativa', 'inativa'].includes(status)) {
         return res.status(400).json({ error: 'Status inválido' });
       }
 
-      // Validação de modalidade se fornecida
       if (modality && !['Presencial', 'Remoto', 'Híbrido'].includes(modality)) {
         return res.status(400).json({ error: 'Modalidade inválida' });
       }
@@ -188,7 +182,7 @@ export default function jobsRoutes(db: any) {
           isPCD,
           category,
           status,
-          updatedAt: new Date(), // se o schema tiver este campo
+          updatedAt: new Date(),
         })
         .where(eq(schema.jobs.id, id));
 
@@ -207,7 +201,6 @@ export default function jobsRoutes(db: any) {
     try {
       const { id } = req.params;
 
-      // Verifica se a vaga existe
       const existing = await db.select().from(schema.jobs).where(eq(schema.jobs.id, id));
       if (existing.length === 0) {
         return res.status(404).json({ error: 'Vaga não encontrada' });
@@ -230,7 +223,6 @@ export default function jobsRoutes(db: any) {
     try {
       const { id } = req.params;
 
-      // Busca a vaga para garantir que existe
       const jobs = await db
         .select()
         .from(schema.jobs)
@@ -240,19 +232,17 @@ export default function jobsRoutes(db: any) {
         return res.status(404).json({ error: 'Vaga não encontrada' });
       }
 
-      // Incrementa o contador de cliques
       await db
         .update(schema.jobs)
         .set({ clicks: (jobs[0].clicks || 0) + 1 })
         .where(eq(schema.jobs.id, id));
 
-      // Registra a métrica
       await db.insert(schema.clickMetrics).values({
         id: uuidv4(),
         resourceType: 'job',
         resourceId: id,
         clickType: 'redirect',
-        createdAt: new Date(), // se a tabela tiver este campo
+        createdAt: new Date(),
       });
 
       res.json({ message: 'Clique registrado' });
