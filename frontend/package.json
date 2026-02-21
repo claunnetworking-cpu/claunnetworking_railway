@@ -16,7 +16,7 @@
     "lucide-react": "^0.453.0",
     "tailwindcss": "^4.1.14",
     "wouter": "^3.3.5",
-    "zod": "^4.1.12",
+    "zod": "^3.24.2",
     "react-hook-form": "^7.64.0",
     "@hookform/resolvers": "^5.2.2",
     "recharts": "^2.15.4",
@@ -25,12 +25,11 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^5.0.4",
     "vite": "^7.1.7",
-    "typescript": "^5.9.3",
+    "typescript": "^5.8.3",
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
     "@types/node": "^24.7.0",
     "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
-    "tailwindcss": "^4.1.14"
+    "postcss": "^8.4.47"
   }
 }
