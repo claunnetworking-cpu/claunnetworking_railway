@@ -1,0 +1,33 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: railway
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database:/docker-entrypoint-initdb.d
+  api:
+    build: ./backend/backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/railway
+      JWT_SECRET: changeme-super-secret-key-1234
+      LOG_LEVEL: info
+      CORS_ORIGIN: "*"
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+  web:
+    build: ./frontend
+    environment:
+      VITE_API_URL: http://localhost:3000
+    depends_on:
+      - api
+    ports:
+      - "5173:5173"

@@ -1,58 +1,44 @@
-# 🚀 ClaunNetworking — Railway + Production Ready (v5.1.1)
+# ClaunNetworking v5.2.1 — Fullstack (UI original) + Railway via GitHub
 
-Repositório **pronto para subir no GitHub e fazer deploy no Railway**.
+## Estrutura
+- `backend/` API Node/Express (Railway-ready, multi-tenant RLS)
+- `frontend/` UI baseada no layout original
+- `database/` schema SQL para PostgreSQL (Railway)
 
-## ✅ Inclui
-- Backend Node.js/Express pronto para Railway (porta dinâmica `process.env.PORT`)
-- PostgreSQL multi-tenant com **Row Level Security (RLS)**
-- Painel executivo financeiro:
-  - `GET /dashboard/metrics` (MRR/ARR/Churn/TotalRevenue)
-- Observabilidade:
-  - logs estruturados (Pino)
-  - métricas Prometheus (`GET /metrics`)
-- Produção:
-  - Helmet, Compression, Rate limit
-  - validação de ENV via Zod
-  - graceful shutdown
-- CI/CD:
-  - GitHub Actions (`.github/workflows/ci.yml`)
-- Deploy:
-  - `railway.toml` com healthcheck `/health`
+## Deploy no Railway via GitHub (2 serviços no mesmo repo)
+Você vai criar **dois serviços** no Railway apontando para subdiretórios.
 
----
-
-## 🚀 Deploy no Railway (passo a passo rápido)
-1. Crie um **Project** no Railway
-2. **New Service → PostgreSQL**
-3. Abra o SQL Editor do Postgres e execute `database/schema.sql`
-4. **New Service → Deploy from GitHub Repo**
-5. Configure variables no serviço do backend:
-   - `DATABASE_URL` (copiada do Postgres)
-   - `JWT_SECRET` (>= 16 chars)
-   - `NODE_ENV=production`
-   - `LOG_LEVEL=info`
-6. Teste:
+### 1) Backend
+1. Railway → New Project → New Service → **Deploy from GitHub Repo**
+2. Escolha este repositório
+3. Em **Settings → Root Directory** coloque: `backend`
+4. Em **Variables**:
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (ou o valor do seu Postgres)
+   - `JWT_SECRET` = (>= 16 caracteres)
+   - `NODE_ENV` = `production`
+   - `CORS_ORIGIN` = `https://DOMINIO_DO_FRONTEND` (recomendado)
+5. Abra a URL do serviço e teste:
    - `GET /health`
-   - `GET /dashboard/metrics` com header `x-tenant-id`
 
-> Rotas tenant-scoped exigem `x-tenant-id` para isolamento via RLS.
+### 2) PostgreSQL
+1. No mesmo Project: New Service → **PostgreSQL**
+2. Execute `database/schema.sql` (via DBeaver/psql)
+3. Crie um tenant demo:
+   ```sql
+   INSERT INTO tenants (name, plan) VALUES ('Tenant Demo','pro') RETURNING id;
+   ```
 
----
+### 3) Frontend
+1. Railway → New Service → **Deploy from GitHub Repo**
+2. Selecione o mesmo repositório
+3. Em **Settings → Root Directory** coloque: `frontend`
+4. Em **Variables**:
+   - `VITE_API_URL` = `https://DOMINIO_DO_BACKEND.up.railway.app`
+   - `VITE_DEFAULT_TENANT_ID` = `UUID do tenant criado`
+5. Após deploy, acesse:
+   - `/admin/finance`
 
-## 🧪 Rodar local
-```bash
-cd backend
-cp ../.env.example .env
-npm i
-npm run dev
-```
-
----
-
-## 📚 Documentação
-- `docs/DEPLOY_RAILWAY.md` (deploy + notas de RLS)
-
----
-
-## 🔒 Segurança
-Veja `.github/SECURITY.md`.
+## Testes de integração
+- Backend: `/health` deve retornar 200
+- Frontend: `/admin/finance` deve carregar métricas ao informar `tenant_id`
+- Observabilidade: Backend `/metrics` (Prometheus)
