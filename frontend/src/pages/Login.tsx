@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Mail, Lock, AlertCircle, LockKeyhole } from 'lucide-react';
-
-const ADMIN_EMAIL = 'claunnetworking@gmail.com';
-const ADMIN_PASSWORD = 'Working-claun@1988';
+import { login } from '@/lib/api';
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -17,19 +15,18 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    // Simular delay de autenticação
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      // Salvar token no localStorage
-      localStorage.setItem('adminToken', 'authenticated');
-      localStorage.setItem('adminEmail', email);
+    try {
+      await login(email, password);
       setLocation('/admin');
-    } else {
-      setError('Email ou senha incorretos');
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.error ||
+        err?.message ||
+        'Erro ao autenticar. Verifique suas credenciais.';
+      setError(String(msg));
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
